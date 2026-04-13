@@ -28,7 +28,6 @@ def run_profile():
         except FileNotFoundError:
             print(f"  Skipping {i}: files not found in {LOAD_DIR}")
 
-    # 4. Show the aggregated results
     print("\n" + "="*30)
     print("AGGREGATED LINE-BY-LINE STATS")
     print("="*30)
@@ -39,5 +38,3 @@ if __name__ == "__main__":
 
 # to test the profiler, run:
 # uv run python hpc/evelina/profile_jacobi.py or uv run kernprof -l -v hpc/evelina/profile_jacobi.py
-# To visualise performance, run:
-# uv run snakeviz jacobi_performance.prof
