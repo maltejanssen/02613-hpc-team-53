@@ -1,7 +1,27 @@
 import numpy as np
 import builtins
 import line_profiler
-from simulate import jacobi, load_data
+from simulate import load_data
+
+def jacobi(u, interior_mask, max_iter, atol=1e-6):
+    u = np.copy(u)
+    # Create a copy of the interior
+    interior = u[1:-1, 1:-1]
+
+    for i in range(max_iter):
+        # Compute average of left, right, up and down neighbors, see eq. (1)
+        u_new = 0.25 * (u[1:-1, :-2] + u[1:-1, 2:] + u[:-2, 1:-1] + u[2:, 1:-1])
+        # Check convergence every 500 iterations to save time
+        if i % 500 == 0:
+            # We check the max change only within the masked interior
+            delta = np.abs(interior[interior_mask] - u_new[interior_mask]).max()
+            if delta < atol:
+                break
+
+        # Apply u_new where mask is True, keep old where False
+        interior[:] = np.where(interior_mask, u_new, interior)
+
+    return u
 
 
 def run_profile():

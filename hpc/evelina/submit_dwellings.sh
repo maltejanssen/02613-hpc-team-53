@@ -3,7 +3,7 @@
 #BSUB -q hpc
 #BSUB -W 00:10
 #BSUB -R "rusage[mem=1GB]"
-#BSUB -R "select[model == XeonE5_2660v3]"
+#BSUB -R "select[model == XeonE5_2650v4]"
 #BSUB -o dwellings_outputs_%J/job_%J.out
 #BSUB -e dwellings_outputs_%J/job_%J.err
 #BSUB -B
@@ -15,7 +15,7 @@ OUTPUT_DIR="dwellings_outputs_${LSB_JOBID}"
 mkdir -p "$OUTPUT_DIR"
 
 # Initialize python environment
-source /dtu/projects/02613_2025/conda/conda_init.sh
+source /dtu/projects/02613_2026/conda/conda_init.sh
 conda activate 02613
 
 # Run python script with the unique directory for all outputs

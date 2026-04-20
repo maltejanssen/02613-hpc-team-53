@@ -6,10 +6,7 @@ import numpy as np
 import multiprocessing
 import time
 import builtins
-
-
-if "profile" not in builtins.__dict__:
-    builtins.profile = lambda f: f
+from numba import njit
 
 
 def load_data(load_dir, bid):
@@ -28,24 +25,30 @@ def solve_building(args):
     result = jacobi(u0, mask, max_iter, atol)
     return result
 
-@profile
+@njit
 def jacobi(u, interior_mask, max_iter, atol=1e-6):
-    u = np.copy(u)
-    # Create a copy of the interior
-    interior = u[1:-1, 1:-1]
+    u = u.copy()
+    rows, cols = interior_mask.shape
 
     for i in range(max_iter):
-        # Compute average of left, right, up and down neighbors, see eq. (1)
-        u_new = 0.25 * (u[1:-1, :-2] + u[1:-1, 2:] + u[:-2, 1:-1] + u[2:, 1:-1])
-        # Check convergence every 200 iterations to save time
-        if i % 200 == 0:
-            # We check the max change only within the masked interior
-            delta = np.abs(interior[interior_mask] - u_new[interior_mask]).max()
-            if delta < atol:
-                break
 
-        # Apply u_new where mask is True, keep old where False
-        interior[:] = np.where(interior_mask, u_new, interior)
+        if i % 500 == 0:
+            max_delta = 0.0
+            for r in range(rows):
+                for c in range(cols):
+                    if interior_mask[r, c]:
+                        # Standard Jacobi: (Left + Right + Up + Down) / 4
+                        new_val = 0.25 * (u[r+1, c] + u[r+1, c+2] + u[r, c+1] + u[r+2, c+1])
+                        diff = abs(new_val - u[r+1, c+1])
+                        if diff > max_delta:
+                            max_delta = diff
+            
+            if max_delta < atol:
+                break
+        for r in range(rows):
+            for c in range(cols):
+                if interior_mask[r, c]:
+                    u[r+1, c+1] = 0.25 * (u[r+1, c] + u[r+1, c+2] + u[r, c+1] + u[r+2, c+1])
 
     return u
 
@@ -91,19 +94,23 @@ if __name__ == '__main__':
         worker_tests = [1, 2, 4, 8]
         print(f"Running benchmark on N={N} buildings...")
     else:
-        # If not benchmarking use default 4 workers
+        # If benchmarking not passed use default 4 workers
         worker_tests = [4]
 
     results = []
     execution_times = []
+
     for p in worker_tests:
         print(f"Starting execution with pool size: {p}")
         t0 = time.time()
+        
+        c_size = max(1, len(building_ids) // p) 
+
         with multiprocessing.Pool(p) as pool:
-            # Prepare arguments for each building
             tasks = [(all_u0[i], all_interior_mask[i], MAX_ITER, ABS_TOL) for i in range(N)]
-            # Use map to get the results back
-            results = pool.map(solve_building, tasks)
+            
+            results = pool.map(solve_building, tasks, chunksize=c_size)
+            
         elapsed = time.time() - t0
         execution_times.append(elapsed)
         print(f"Pool {p} took: {elapsed:.3f}s")
