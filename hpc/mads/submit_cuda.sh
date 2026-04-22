@@ -1,0 +1,28 @@
+#!/bin/bash
+#BSUB -J simulate_cuda
+#BSUB -q gpuv100
+#BSUB -R "rusage[mem=4GB]"
+#BSUB -B
+#BSUB -N
+##BSUB -u mekre@dtu.dk
+#BSUB -o Output_%J.out
+#BSUB -e Output_%J.err
+#BSUB -W 6:00
+#BSUB -n 4
+#BSUB -R "span[hosts=1]"
+#BSUB -R "select[model==XeonGold6126]"
+
+source /dtu/projects/02613_2025/conda/conda_init.sh
+conda activate 02613_2026
+
+# For profiling 
+# python3 -m cProfile simulate.py 10
+
+# For line profiling 
+# kernprof -l simulate.py 10
+# python3 -m line_profiler simulate.py.lprof
+
+# Just for running
+python3 simulate_cuda.py 64
+
+
