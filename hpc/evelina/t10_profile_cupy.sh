@@ -3,7 +3,7 @@
 #BSUB -q gpuv100
 #BSUB -W 00:30
 #BSUB -R "rusage[mem=4GB]"
-#BSUB -gpu "num=1"
+#BSUB -gpu "num=1:mode=exclusive_process"
 #BSUB -o dwellings_outputs_%J/job_%J.out
 #BSUB -e dwellings_outputs_%J/job_%J.err
 #BSUB -B
